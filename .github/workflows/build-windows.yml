@@ -36,14 +36,40 @@ jobs:
       - name: Build Tauri app
         run: npx tauri build
 
-      - name: Upload NSIS installer
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: claude-widget-setup-exe
-          path: src-tauri/target/release/bundle/nsis/*.exe
+          name: claude-widget-windows
+          path: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/msi/*.msi
 
-      - name: Upload MSI installer
-        uses: actions/upload-artifact@v4
+      - name: Get version
+        id: version
+        shell: bash
+        run: echo "version=$(jq -r .version src-tauri/tauri.conf.json)" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: claude-widget-setup-msi
-          path: src-tauri/target/release/bundle/msi/*.msi
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Claude Widget v${{ steps.version.outputs.version }}
+          body: |
+            ## Claude Usage Desktop Widget v${{ steps.version.outputs.version }}
+
+            Windows desktop widget for monitoring your Claude AI usage.
+
+            ### Install
+            - **Setup EXE** (recommended): Download and run the `.exe` installer
+            - **MSI**: Alternative Windows Installer format
+
+            ### Features
+            - Real-time Claude usage monitoring (5-hour, 7-day, per-model)
+            - Auto-refresh every 60 seconds
+            - Dark theme matching claude.ai design
+            - System tray with hide/show toggle
+            - Reads session from Firefox automatically, manual paste fallback for Chrome/Edge
+          draft: false
+          files: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/msi/*.msi
