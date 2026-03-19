@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicegui/tauri/v2/crates/tauri-config-schema/schema.json",
   "productName": "Claude Usage Widget",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.claude-widget.app",
   "build": {
     "frontendDist": "../dist",
