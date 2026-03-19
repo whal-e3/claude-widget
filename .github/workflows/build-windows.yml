@@ -3,8 +3,10 @@ name: Build Windows
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -28,20 +30,20 @@ jobs:
       - name: Install frontend dependencies
         run: npm install
 
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: v${{ github.ref_name }}
-          releaseName: "Claude Widget v${{ github.ref_name }}"
-          releaseBody: "Windows desktop widget for monitoring Claude AI usage."
-          releaseDraft: true
+      - name: Build frontend
+        run: npx vite build
 
-      - name: Upload artifacts
+      - name: Build Tauri app
+        run: npx tauri build
+
+      - name: Upload NSIS installer
         uses: actions/upload-artifact@v4
         with:
-          name: claude-widget-windows
-          path: |
-            src-tauri/target/release/bundle/msi/*.msi
-            src-tauri/target/release/bundle/nsis/*.exe
+          name: claude-widget-setup-exe
+          path: src-tauri/target/release/bundle/nsis/*.exe
+
+      - name: Upload MSI installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-widget-setup-msi
+          path: src-tauri/target/release/bundle/msi/*.msi
