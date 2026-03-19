@@ -96,6 +96,11 @@
     if (refreshInterval) clearInterval(refreshInterval);
   });
 
+  async function hideToTray() {
+    const win = getCurrentWindow();
+    await win.hide();
+  }
+
   async function fetchUsageDirectly(): Promise<boolean> {
     try {
       const data = await invoke<UsageData | null>("get_current_usage");
@@ -164,7 +169,10 @@
 <div class="widget">
   <div class="title-bar" id="title-bar">
     <span class="title">Claude Usage</span>
-    <button class="refresh-btn" onclick={fetchUsageDirectly} title="Refresh">&#x21bb;</button>
+    <div class="title-actions">
+      <button class="title-btn" onclick={fetchUsageDirectly} title="Refresh">&#x21bb;</button>
+      <button class="title-btn hide-btn" onclick={hideToTray} title="Hide to tray">&#x2715;</button>
+    </div>
   </div>
 
   <div class="content">
@@ -278,16 +286,27 @@
     letter-spacing: 0.3px;
   }
 
-  .refresh-btn {
+  .title-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .title-btn {
     font-size: 14px;
     color: var(--text-secondary);
-    padding: 2px 4px;
+    padding: 2px 6px;
     border-radius: 4px;
   }
 
-  .refresh-btn:hover {
+  .title-btn:hover {
     color: var(--text-primary);
     background: var(--bg-secondary);
+  }
+
+  .hide-btn:hover {
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.15);
   }
 
   .content {
