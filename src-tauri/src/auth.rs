@@ -80,15 +80,24 @@ pub async fn capture_browser_cookies(app: AppHandle) -> Result<String, String> {
     Ok(format!("Connected via {}", browser_name))
 }
 
-/// Read cookies from Firefox's cookies.sqlite (unencrypted on Linux)
+/// Read cookies from Firefox's cookies.sqlite (unencrypted on all platforms)
 fn read_firefox_cookies() -> Result<Vec<CookieEntry>, String> {
     let home = dirs::home_dir().ok_or("No home directory")?;
 
-    let candidates = [
+    let mut candidates = vec![
+        // Linux
         home.join("snap/firefox/common/.mozilla/firefox"),
         home.join(".mozilla/firefox"),
         home.join("snap/firefox/current/.mozilla/firefox"),
     ];
+
+    // Windows
+    if let Some(appdata) = dirs::data_dir() {
+        candidates.push(appdata.join("Mozilla/Firefox/Profiles").parent().unwrap_or(&appdata).join("Mozilla/Firefox"));
+    }
+    if let Ok(appdata) = std::env::var("APPDATA") {
+        candidates.push(PathBuf::from(&appdata).join("Mozilla/Firefox"));
+    }
 
     let firefox_dir = candidates
         .iter()
@@ -196,11 +205,22 @@ fn find_firefox_profile(firefox_dir: &PathBuf) -> Result<PathBuf, String> {
 fn read_chromium_cookies() -> Result<Vec<CookieEntry>, String> {
     let home = dirs::home_dir().ok_or("No home directory")?;
 
-    let candidates = [
+    let mut candidates = vec![
+        // Linux
         home.join(".config/google-chrome/Default/Cookies"),
         home.join(".config/chromium/Default/Cookies"),
         home.join(".config/microsoft-edge/Default/Cookies"),
     ];
+
+    // Windows
+    if let Some(local_appdata) = dirs::data_local_dir() {
+        candidates.push(local_appdata.join("Google/Chrome/User Data/Default/Cookies"));
+        candidates.push(local_appdata.join("Google/Chrome/User Data/Default/Network/Cookies"));
+        candidates.push(local_appdata.join("Microsoft/Edge/User Data/Default/Cookies"));
+        candidates.push(local_appdata.join("Microsoft/Edge/User Data/Default/Network/Cookies"));
+        candidates.push(local_appdata.join("BraveSoftware/Brave-Browser/User Data/Default/Cookies"));
+        candidates.push(local_appdata.join("BraveSoftware/Brave-Browser/User Data/Default/Network/Cookies"));
+    }
 
     for cookies_db in &candidates {
         if !cookies_db.exists() {
@@ -272,6 +292,36 @@ async fn fetch_org_id(cookies: &[CookieEntry]) -> Option<String> {
     } else {
         None
     }
+}
+
+/// Manual session cookie input (fallback for Windows where cookies are encrypted)
+#[tauri::command(async)]
+pub async fn save_session_cookie(app: AppHandle, cookie_value: String) -> Result<bool, String> {
+    let cookie_value = cookie_value.trim().to_string();
+    if cookie_value.is_empty() {
+        return Err("Cookie value is empty".to_string());
+    }
+
+    info!("Saving manual session cookie ({} chars)", cookie_value.len());
+
+    let cookie_entry = CookieEntry {
+        name: "sessionKey".to_string(),
+        value: cookie_value,
+        domain: "claude.ai".to_string(),
+    };
+
+    let org_id = fetch_org_id(&[cookie_entry.clone()]).await;
+
+    let credentials = AuthCredentials {
+        session_key: Some(cookie_entry.value.clone()),
+        bearer_token: None,
+        cookies: vec![cookie_entry],
+        organization_id: org_id,
+    };
+
+    session::save_credentials(&credentials)?;
+    let _ = app.emit("auth-success", ());
+    Ok(true)
 }
 
 #[tauri::command(async)]

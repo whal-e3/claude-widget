@@ -43,6 +43,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             auth::open_login_browser,
             auth::capture_browser_cookies,
+            auth::save_session_cookie,
             auth::check_session,
             auth::clear_session,
             window::set_widget_position,
