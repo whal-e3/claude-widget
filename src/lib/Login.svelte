@@ -70,12 +70,13 @@
       2. Type: <code>document.cookie</code><br />
       3. Find <code>sessionKey=xxx</code> and copy the xxx part
     </p>
-    <textarea
+    <input
+      type="password"
       class="cookie-input"
       placeholder="Paste sessionKey value here..."
       bind:value={cookieInput}
-      rows="3"
-    ></textarea>
+    />
+    <p class="security-note">Your key is stored locally and only sent to claude.ai. Never shared with third parties.</p>
     <button
       class="login-btn"
       onclick={saveManualCookie}
@@ -191,6 +192,13 @@
     text-align: center;
     max-width: 100%;
     word-break: break-word;
+  }
+
+  .security-note {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-align: center;
+    font-style: italic;
   }
 
   .status.error {
