@@ -65,8 +65,7 @@ pub async fn set_widget_position(app: AppHandle, corner: String) -> Result<(), S
 pub fn is_fullscreen_app_active() -> bool {
     unsafe {
         // Method 1: SHQueryUserNotificationState
-        let mut state = QUERY_USER_NOTIFICATION_STATE::default();
-        if SHQueryUserNotificationState(&mut state).is_ok() {
+        if let Ok(state) = SHQueryUserNotificationState() {
             if state == QUNS_BUSY || state == QUNS_RUNNING_D3D_FULL_SCREEN {
                 return true;
             }
